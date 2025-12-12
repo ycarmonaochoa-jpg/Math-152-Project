@@ -297,7 +297,7 @@ ggplot(top10_estimated,
   geom_col(fill = "steelblue") +
   coord_flip() +
   labs (
-    title = "Government Response (%) for Bottom 10 Countries by Estimated People in Modern Slavery",
+    title = "Government Response (%) for Top 10 Countries by Estimated People in Modern Slavery",
     x = "Country",
     y = "Government Response (%)"
   ) +
