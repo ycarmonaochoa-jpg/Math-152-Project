@@ -1,0 +1,306 @@
+---
+title: "Analyzing Modern Slavery"
+author: "Yatziri I. Carmona Ochoa"
+format:
+  pdf: default
+  html: default
+editor: visual
+execute:
+  warning: false 
+---
+
+# Packages
+
+```{r}
+#Load packages
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(scales)
+```
+
+# Dataset
+
+```{r}
+# Because there's multiple sheets and crowded rows, we need to specify where
+# need to begin
+df <- read_excel(
+  "2023-Global-Slavery-Index-Data 2.xlsx",
+  sheet = "GSI 2023 summary data",  
+  skip = 2
+)
+```
+
+# Investigating Trends for Estimated Number of People in Modern Slavery
+
+## For Every Country
+
+```{r}
+#Select columns for country and estimates
+slavery_plot_data <- df |>
+  select(Country, `Estimated number of people in modern slavery`) |>
+  rename(Estimated = `Estimated number of people in modern slavery`) |>
+  drop_na() |>
+  arrange(desc(Estimated))
+
+```
+
+```{r}
+#Create comparison plot
+ggplot(slavery_plot_data, aes(x = reorder(Country, Estimated), y = Estimated)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous(labels = scales::comma) +
+  labs(
+    title = "Estimated Number of People in Modern Slavery by Country",
+    x = "Country",
+    y = "Estimated Number of People"
+  ) +
+  theme_minimal(base_size = 3)
+
+```
+
+## Top 10 Countries with the Greatest Number of Estimated People in Modern Slavery
+
+```{r}
+#Checking for the top 10 countries with the greatest estimated number of people in modern slavery
+
+top10 <- df |>
+  select(Country, `Estimated number of people in modern slavery`) |>
+  rename(Estimated = `Estimated number of people in modern slavery`) |>
+  arrange(desc(Estimated)) |>
+  slice(1:10)
+
+top10
+```
+
+```{r}
+top10 <- slavery_plot_data |>
+  arrange(desc(Estimated)) |>  
+  slice(1:10)
+
+
+ggplot(top10, aes(x = reorder(Country, Estimated), y = Estimated)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous() +
+  labs(
+    title = "Top 10 Countries by Estimated Number of People in Modern Slavery",
+    x = "Country",
+    y = "Estimated Number of People"
+  ) +
+  theme_minimal(base_size = 10)
+```
+
+## Bottom 10 Countries with the Lowest Number of Estimated People in Modern Slavery
+
+```{r}
+#Create comparison plot
+slavery_plot_data <- df |>
+  select(Country, `Estimated number of people in modern slavery`) |>
+  rename(Estimated = `Estimated number of people in modern slavery`) |>
+  drop_na() |>
+  arrange((Estimated))
+
+bottom10 <- slavery_plot_data |>
+  arrange(Estimated) |>  
+  slice(1:10)
+
+
+ggplot(bottom10, aes(x = reorder(Country, Estimated), y = Estimated)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous() +
+  labs(
+    title = "Bottom 10 Countries by Estimated Number of People in Modern Slavery",
+    x = "Country",
+    y = "Estimated Number of People"
+  ) +
+  theme_minimal(base_size = 10)
+```
+
+```{r}
+#Checking for the bottom 10 countries with the greatest estimated number of people in modern slavery
+
+df <- read_excel(
+  "2023-Global-Slavery-Index-Data 2.xlsx",
+  sheet = "GSI 2023 summary data",  # or whichever sheet you want
+  skip = 2
+)
+
+bottom10 <- df |>
+  select(Country, `Estimated number of people in modern slavery`) |>
+  rename(Estimated = `Estimated number of people in modern slavery`) |>
+  arrange((Estimated)) |>
+  slice(1:10)
+
+bottom10
+```
+
+# Investigating Government Response
+
+## Milestone Percentages Comparison for Top 10 Modern Slavery Countries
+
+```{r}
+milestone_cols <- c(
+  "Milestone 1 %",
+  "Milestone 2 %",
+  "Milestone 3 %",
+  "Milestone 4 %",
+  "Milestone 5 %",
+  "Total %"
+)
+```
+
+```{r}
+
+df_summary <- read_excel(
+  "2023-Global-Slavery-Index-Data 2.xlsx",
+  sheet = "GSI 2023 summary data",
+  skip = 2
+)
+
+df_summary <- df_summary |>
+  mutate(Estimated = as.numeric(gsub(",", "", `Estimated number of people in modern slavery`)))
+
+top10 <- df_summary |>
+  arrange(desc(Estimated)) |>
+  slice(1:10) |>
+  select(Country)
+
+df_indicators <- read_excel(
+  "2023-Global-Slavery-Index-Data 2.xlsx",
+  sheet = "Govt response - Indicators",
+  skip = 2
+)
+
+df10 <- df_indicators |>
+  filter(Country %in% top10$Country)
+
+milestone_cols <- c(
+  "Milesone 1 %",      
+  "Milestone 2 %",
+  "Milestone 3 %",
+  "Milestone 4 %",
+  "Milestone 5 %",
+  "Total %"
+)
+
+plot_data <- df10 |>
+  select(Country, all_of(milestone_cols)) |>
+  pivot_longer(cols = milestone_cols,
+               names_to = "Milestone",
+               values_to = "Percentage")
+
+ggplot(plot_data, 
+       aes(x = Country, y = Percentage, fill = Milestone)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = percent_format(scale = 1)) +
+  labs(
+    title = "Top 10 Countries – Comparison of Milestone Percentages",
+    x = "Country",
+    y = "Percentage",
+    fill = "Milestone"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+```{r}
+df_summary <- read_excel(
+  "2023-Global-Slavery-Index-Data 2.xlsx",
+  sheet = "GSI 2023 summary data",
+  skip = 2
+)
+
+df_summary <- df_summary |>
+  mutate(`Government response total (%)` =
+           as.numeric(gsub(",", "", `Government response total (%)`)))
+
+slavery_plot_data <- df_summary |>
+  select(Country, `Government response total (%)`) |>
+  drop_na(`Government response total (%)`)
+
+top10 <- slavery_plot_data |>
+  arrange(desc(`Government response total (%)`)) |>
+  slice(1:10)
+
+bottom10 <- slavery_plot_data |>
+  arrange(`Government response total (%)`) |>
+  slice(1:10)
+
+```
+
+## Top 10 Countries with the Best Government Response %
+
+```{r}
+ggplot(top10, aes(
+  x = reorder(Country, `Government response total (%)`),
+  y = `Government response total (%)`
+)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Countries by Government Response (%)",
+    x = "Country",
+    y = "Government Response (%)"
+  ) +
+  theme_minimal(base_size = 10)
+
+```
+
+## Bottom 10 Countries with the Worst Government Response %
+
+```{r}
+ggplot(bottom10, aes(
+  x = reorder(Country, `Government response total (%)`),
+  y = `Government response total (%)`
+)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Bottom 10 Countries by Government Response (%)",
+    x = "Country",
+    y = "Government Response (%)"
+  ) +
+  theme_minimal(base_size = 10)
+
+```
+
+```{r}
+df_summary <- read_excel(
+  "2023-Global-Slavery-Index-Data 2.xlsx",
+  sheet = "GSI 2023 summary data",
+  skip = 2
+)
+
+df_summary <- df_summary |>
+  mutate(
+    `Estimated number of people in modern slavery` =
+      as.numeric(gsub(",", "", `Estimated number of people in modern slavery`)),
+    
+    `Government response total (%)` =
+      as.numeric(gsub(",", "", `Government response total (%)`))
+  )
+top10_estimated <- df_summary |>
+  arrange(desc(`Estimated number of people in modern slavery`)) |>
+  slice(1:10) |>
+  select(Country, `Estimated number of people in modern slavery`, `Government response total (%)`)
+
+ggplot(top10_estimated, 
+       aes(x = reorder(Country, `Government response total (%)`),
+           y = `Government response total (%)`)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs (
+    title = "Government Response (%) for Bottom 10 Countries by Estimated People in Modern Slavery",
+    x = "Country",
+    y = "Government Response (%)"
+  ) +
+  theme_minimal(base_size = 8)
+
+```
